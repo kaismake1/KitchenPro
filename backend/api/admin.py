@@ -259,6 +259,39 @@ class OrderStatusUpdate(BaseModel):
     shipper_phone: Optional[str] = None
 
 
+def update_product_stock(db: Session, order: Order, old_status: str, new_status: str):
+    """
+    Update product stock based on order status changes.
+    
+    Logic:
+    - "pending" -> "paid" or "shipping": Deduct stock
+    - "shipping" -> "cancelled": Return stock
+    - "cancelled" -> any other status: Deduct stock (order reinstated)
+    - "paid"/"shipping" -> "cancelled": Return stock
+    """
+    # Statuses that reserve stock (products are no longer available)
+    RESERVED_STATUSES = {"paid", "shipping", "delivered"}
+    
+    is_old_reserved = old_status in RESERVED_STATUSES
+    is_new_reserved = new_status in RESERVED_STATUSES
+    
+    # Deduct stock: transitioning to a reserved status from non-reserved
+    if not is_old_reserved and is_new_reserved:
+        for item in order.items:
+            product = item.product
+            product.stock -= item.quantity
+            product.status = "in-stock" if product.stock > 0 else "out-of-stock"
+        db.commit()
+    
+    # Return stock: transitioning from reserved to non-reserved (e.g., cancelled)
+    elif is_old_reserved and not is_new_reserved:
+        for item in order.items:
+            product = item.product
+            product.stock += item.quantity
+            product.status = "in-stock"
+        db.commit()
+
+
 @router.patch("/orders/{order_id}")
 def update_order_status(
     order_id: str,
@@ -266,16 +299,24 @@ def update_order_status(
     authorization: str = Header(None),
     db: Session = Depends(get_db)
 ):
-    """Update order status, shipper info - for admin dashboard sync."""
+    """
+    Update order status, shipper info - for admin dashboard sync.
+    Automatically manages product stock based on order status.
+    """
     admin = verify_admin(authorization, db)
 
     order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
+    old_status = order.status
+    
     # Update fields if provided
     if status_update.status:
         order.status = status_update.status
+        # Update product stock when status changes
+        update_product_stock(db, order, old_status, status_update.status)
+    
     if status_update.shipper:
         order.shipper = status_update.shipper
     if status_update.shipper_phone:

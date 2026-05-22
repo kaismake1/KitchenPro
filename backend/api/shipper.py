@@ -25,6 +25,8 @@ class OrderResponse(BaseModel):
     items: List[OrderItemResponse]
     createdAt: str
     updatedAt: str
+    shipper: str
+    shipperPhone: str
 
 
 class UpdateOrderStatusRequest(BaseModel):
@@ -80,6 +82,8 @@ def get_shipper_orders(authorization: str = Header(None), db: Session = Depends(
             ],
             "createdAt": order.created_at.isoformat(),
             "updatedAt": order.updated_at.isoformat(),
+            "shipper": order.shipper or "",
+            "shipperPhone": order.shipper_phone or "",
         })
     
     return result
@@ -208,4 +212,6 @@ def get_order_detail(
         ],
         "createdAt": order.created_at.isoformat(),
         "updatedAt": order.updated_at.isoformat(),
+        "shipper": order.shipper or "",
+        "shipperPhone": order.shipper_phone or "",
     }

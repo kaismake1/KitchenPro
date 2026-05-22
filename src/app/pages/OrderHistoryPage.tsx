@@ -125,7 +125,8 @@ export function OrderHistoryPage() {
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
                     <Truck className="w-4 h-4 mr-1" />
-                    Công Ty Vận Chuyển: {order.shipper || "—"}
+                    Shipper: {order.shipper || "Chưa gán"}
+                    {order.shipper_phone && ` - ${order.shipper_phone}`}
                   </div>
                 </div>
 

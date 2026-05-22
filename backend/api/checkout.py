@@ -9,6 +9,7 @@ from backend.models.orm import Order, OrderItem, Product, User
 from backend.services.auth import verify_token
 from backend.services.search import decrement_stock
 from backend.services.payment import create_payment_intent, verify_webhook_signature
+from backend.services.shipper import assign_shipper_to_order
 
 router = APIRouter(prefix="/api/checkout", tags=["checkout"])
 
@@ -106,6 +107,13 @@ def checkout(req: CheckoutRequest, authorization: str = Header(None), db: Sessio
         db.add(order)
         db.commit()
         db.refresh(order)
+
+        # Auto-assign shipper to the order
+        assign_shipper_to_order(db, order.id)
+        
+        # Refresh order after assignment
+        db.refresh(order)
+        print(f"Order {order.id} assigned to shipper: {order.shipper_id}")
 
         # Handle payment method
         redirect_url = None
@@ -261,6 +269,8 @@ def get_order_history(authorization: str = Header(None), db: Session = Depends(g
             "paymentMethod": order.payment_method,
             "createdAt": order.created_at.isoformat(),
             "itemCount": len(order.items),
+            "shipper": order.shipper or "",
+            "shipperPhone": order.shipper_phone or "",
         })
 
     return result

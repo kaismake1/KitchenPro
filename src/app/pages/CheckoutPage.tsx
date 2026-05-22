@@ -214,8 +214,12 @@ export function CheckoutPage() {
                       <p className="text-sm text-gray-600 mb-2">
                         Quét mã QR để thanh toán:
                       </p>
-                      <div className="w-48 h-48 bg-gray-100 rounded-lg mx-auto flex items-center justify-center">
-                        <p className="text-gray-400">[Mã QR Tạm Thời]</p>
+                      <div className="flex justify-center">
+                        <img
+                          src="/images/qr-payment.jpg"
+                          alt="QR Thanh Toán"
+                          className="w-48 h-48 object-contain rounded-lg border"
+                        />
                       </div>
                     </div>
                   )}

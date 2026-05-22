@@ -64,8 +64,39 @@ export function ManageOrders() {
     setShipperPhone(order.shipper_phone || "");
   };
 
+  const getStockChangeInfo = (oldStatus: string, newStatus: string) => {
+    const RESERVED_STATUSES = ["paid", "shipping", "delivered"];
+    const isOldReserved = RESERVED_STATUSES.includes(oldStatus);
+    const isNewReserved = RESERVED_STATUSES.includes(newStatus);
+
+    if (!isOldReserved && isNewReserved) {
+      return "sẽ trừ số lượng kho";
+    } else if (isOldReserved && !isNewReserved) {
+      return "sẽ trả lại số lượng kho";
+    }
+    return "";
+  };
+
   const handleSaveStatus = async () => {
     if (!editingOrder) return;
+
+    // Get stock change info
+    const stockChangeInfo = getStockChangeInfo(editingOrder.status, newStatus);
+
+    // Show confirmation dialog if stock will change
+    if (stockChangeInfo) {
+      const productList = editingOrder.items
+        ?.map((item: any) => `${item.name} (x${item.quantity})`)
+        .join(", ");
+
+      const confirmed = confirm(
+        `Cập nhật trạng thái sẽ ${stockChangeInfo}:\n\n${productList}\n\nBạn có chắc chắn?`,
+      );
+
+      if (!confirmed) {
+        return;
+      }
+    }
 
     try {
       // Update via backend
@@ -98,7 +129,9 @@ export function ManageOrders() {
         cancelled: "Đã Hủy",
       };
 
-      toast.success(`Cập nhật trạng thái thành ${statusMap[newStatus]}`);
+      toast.success(
+        `Cập nhật trạng thái thành ${statusMap[newStatus]}. ${stockChangeInfo ? "Kho hàng đã được cập nhật." : ""}`,
+      );
       setEditingOrder(null);
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -337,8 +370,8 @@ export function ManageOrders() {
 
       {/* Edit Status Modal */}
       {editingOrder && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full my-8">
             <h2 className="text-2xl font-bold mb-6">
               Cập Nhật Trạng Thái Đơn Hàng
             </h2>
@@ -364,6 +397,28 @@ export function ManageOrders() {
                   <option value="cancelled">Đã Hủy</option>
                 </select>
               </div>
+
+              {/* Stock change warning */}
+              {getStockChangeInfo(editingOrder.status, newStatus) && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900 mb-2">
+                    ⚠️ Ảnh Hưởng Kho Hàng
+                  </p>
+                  <p className="text-xs text-blue-800 mb-2">
+                    {getStockChangeInfo(editingOrder.status, newStatus) ===
+                    "sẽ trừ số lượng kho"
+                      ? "Sản phẩm sẽ được trừ khỏi kho:"
+                      : "Sản phẩm sẽ được trả lại vào kho:"}
+                  </p>
+                  <ul className="text-xs text-blue-800 space-y-1">
+                    {editingOrder.items?.map((item: any) => (
+                      <li key={item.productId || item.id}>
+                        • {item.name} x{item.quantity}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div className="flex space-x-4 mt-6">
               <button

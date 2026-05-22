@@ -16,12 +16,18 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<{ success: boolean; role?: string }>;
   register: (
     username: string,
     email: string,
     password: string,
-  ) => Promise<boolean>;
+    fullname?: string,
+    phone?: string,
+    address?: string,
+  ) => Promise<{ success: boolean; role?: string }>;
   logout: () => void;
   isAdmin: boolean;
   isShipper: boolean;
@@ -84,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (
     username: string,
     password: string,
-  ): Promise<boolean> => {
+  ): Promise<{ success: boolean; role?: string }> => {
     try {
       const data = await apiClient.post("/auth/login", {
         username,
@@ -101,10 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       TokenManager.setToken(data.access_token);
       setAccessToken(data.access_token);
       setUser(userObj);
-      return true;
+      return { success: true, role: data.role };
     } catch (error) {
       console.error("Login error:", error);
-      return false;
+      return { success: false };
     }
   };
 
@@ -112,12 +118,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     username: string,
     email: string,
     password: string,
-  ): Promise<boolean> => {
+    fullname?: string,
+    phone?: string,
+    address?: string,
+  ): Promise<{ success: boolean; role?: string }> => {
     try {
       const data = await apiClient.post("/auth/register", {
         username,
         email,
         password,
+        fullname,
+        phone,
+        address,
       });
 
       const userObj: User = {
@@ -130,10 +142,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       TokenManager.setToken(data.access_token);
       setAccessToken(data.access_token);
       setUser(userObj);
-      return true;
+      return { success: true, role: data.role };
     } catch (error) {
       console.error("Register error:", error);
-      return false;
+      return { success: false };
     }
   };
 

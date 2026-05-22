@@ -14,6 +14,9 @@ class RegisterRequest(BaseModel):
     username: str
     email: EmailStr
     password: str
+    fullname: str = None
+    phone: str = None
+    address: str = None
 
 
 class LoginRequest(BaseModel):
@@ -44,6 +47,9 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
         username=req.username,
         email=req.email,
         hashed_password=hash_password(req.password),
+        fullname=req.fullname,
+        phone=req.phone,
+        address=req.address,
         role="user",
     )
     db.add(user)

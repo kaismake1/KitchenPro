@@ -42,14 +42,14 @@ export function LoginPage() {
     setLoading(true);
 
     try {
-      const success = await login(username, password);
+      const result = await login(username, password);
 
-      if (success) {
+      if (result.success) {
         toast.success("Đăng nhập thành công!");
-        // Redirect based on role
-        if (user?.role === "admin") {
+        // Redirect based on role from response
+        if (result.role === "admin") {
           navigate("/admin");
-        } else if (user?.role === "shipper") {
+        } else if (result.role === "shipper") {
           navigate("/shipper");
         } else {
           navigate("/");

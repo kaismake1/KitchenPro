@@ -16,7 +16,8 @@ import { useCart } from "../context/CartContext";
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isShipper } = useAuth();
+
   const { cartCount } = useCart();
   const navigate = useNavigate();
 
@@ -75,6 +76,14 @@ export function Header() {
                 className="text-[#1E90FF] hover:text-[#0A3D62] transition-colors duration-200 font-semibold"
               >
                 Quản Trị
+              </Link>
+            )}
+            {isShipper && (
+              <Link
+                to="/shipper"
+                className="text-[#1E90FF] hover:text-[#0A3D62] transition-colors duration-200 font-semibold"
+              >
+                Đơn Hàng Cần Giao
               </Link>
             )}
           </nav>
