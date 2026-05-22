@@ -11,7 +11,7 @@ interface User {
   id: string;
   username: string;
   email: string;
-  role: "user" | "admin";
+  role: "user" | "admin" | "shipper";
 }
 
 interface AuthContextType {
@@ -24,6 +24,7 @@ interface AuthContextType {
   ) => Promise<boolean>;
   logout: () => void;
   isAdmin: boolean;
+  isShipper: boolean;
   isLoading: boolean;
   accessToken: string | null;
 }
@@ -150,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         register,
         logout,
         isAdmin: user?.role === "admin",
+        isShipper: user?.role === "shipper",
         isLoading,
         accessToken,
       }}
