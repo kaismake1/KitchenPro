@@ -373,6 +373,8 @@ def get_all_users(
             "username": user.username,
             "email": user.email,
             "role": user.role,
+            "phone": user.phone,
+            "address": user.address,
             "status": "active",
         })
 
@@ -384,6 +386,8 @@ class UserCreateRequest(BaseModel):
     email: str
     password: str
     role: str = "user"
+    phone: Optional[str] = None
+    address: Optional[str] = None
 
 
 @router.post("/users")
@@ -408,7 +412,9 @@ def create_user(
         username=req.username,
         email=req.email,
         hashed_password=hashed_pw,
-        role=req.role
+        role=req.role,
+        phone=req.phone,
+        address=req.address
     )
     db.add(new_user)
     db.commit()
@@ -419,5 +425,55 @@ def create_user(
         "username": new_user.username,
         "email": new_user.email,
         "role": new_user.role,
+        "phone": new_user.phone,
+        "address": new_user.address,
+        "status": "active"
+    }
+
+
+class UserUpdateRequest(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+
+
+@router.put("/users/{user_id}")
+def update_user(
+    user_id: str,
+    req: UserUpdateRequest,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Update user - for admin dashboard."""
+    admin = verify_admin(authorization, db)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Update fields if provided
+    if req.username is not None:
+        user.username = req.username
+    if req.email is not None:
+        user.email = req.email
+    if req.role is not None:
+        user.role = req.role
+    if req.phone is not None:
+        user.phone = req.phone
+    if req.address is not None:
+        user.address = req.address
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "phone": user.phone,
+        "address": user.address,
         "status": "active"
     }

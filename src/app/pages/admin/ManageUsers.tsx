@@ -12,6 +12,8 @@ export function ManageUsers() {
     email: "",
     password: "",
     role: "user",
+    phone: "",
+    address: "",
   });
   const { accessToken, isAdmin } = useAuth();
 
@@ -77,6 +79,25 @@ export function ManageUsers() {
       setUsers(updated);
       const nonAdmin = updated.filter((u) => u.id !== "admin-1");
       localStorage.setItem("users", JSON.stringify(nonAdmin));
+
+      // Try to update via backend
+      if (accessToken && isAdmin) {
+        fetch(`http://localhost:8000/api/admin/users/${editingUser.id}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: editingUser.username,
+            email: editingUser.email,
+            role: editingUser.role,
+            phone: editingUser.phone,
+            address: editingUser.address,
+          }),
+        }).catch((err) => console.error("Backend update failed:", err));
+      }
+
       setEditingUser(null);
       toast.success("Cập Nhật người dùng thành công");
     }
@@ -228,8 +249,8 @@ export function ManageUsers() {
       {/* Edit Modal */}
       {editingUser && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-            <h2 className="text-2xl font-bold mb-6">Sử Dụng Người Dùng</h2>
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6">Chỉnh Sửa Người Dùng</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold mb-2">
@@ -271,6 +292,34 @@ export function ManageUsers() {
                   <option value="admin">Quản Trị Viên</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Số Điện Thoại{" "}
+                  <span className="text-gray-500">(Tùy Chọn)</span>
+                </label>
+                <input
+                  value={editingUser.phone || ""}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, phone: e.target.value })
+                  }
+                  placeholder="Nhập số điện thoại"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Địa Chỉ <span className="text-gray-500">(Tùy Chọn)</span>
+                </label>
+                <textarea
+                  value={editingUser.address || ""}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, address: e.target.value })
+                  }
+                  placeholder="Nhập địa chỉ"
+                  rows={3}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
             </div>
             <div className="flex space-x-4 mt-6">
               <button
@@ -293,7 +342,7 @@ export function ManageUsers() {
       {/* Add User Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6">Thêm Người Dùng Mới</h2>
             <div className="space-y-4">
               <div>
@@ -353,6 +402,34 @@ export function ManageUsers() {
                   <option value="admin">Quản Trị Viên</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Số Điện Thoại{" "}
+                  <span className="text-gray-500">(Tùy Chọn)</span>
+                </label>
+                <input
+                  value={newUserForm.phone}
+                  onChange={(e) =>
+                    setNewUserForm({ ...newUserForm, phone: e.target.value })
+                  }
+                  placeholder="Nhập số điện thoại"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Địa Chỉ <span className="text-gray-500">(Tùy Chọn)</span>
+                </label>
+                <textarea
+                  value={newUserForm.address}
+                  onChange={(e) =>
+                    setNewUserForm({ ...newUserForm, address: e.target.value })
+                  }
+                  placeholder="Nhập địa chỉ"
+                  rows={3}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
             </div>
             <div className="flex space-x-4 mt-6">
               <button
@@ -363,6 +440,8 @@ export function ManageUsers() {
                     email: "",
                     password: "",
                     role: "user",
+                    phone: "",
+                    address: "",
                   });
                 }}
                 className="flex-1 border-2 border-gray-300 py-2 rounded-lg hover:bg-gray-50"

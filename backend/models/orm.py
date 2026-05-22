@@ -12,6 +12,8 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="user", nullable=False)  # user, admin, or shipper
+    phone = Column(String, nullable=True)  # Optional phone number
+    address = Column(String, nullable=True)  # Optional address
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
