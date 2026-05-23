@@ -7,16 +7,25 @@ import {
   LogOut,
   History,
   Settings,
+  Edit,
 } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { toast } from "sonner";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { user, logout, isAdmin, isShipper } = useAuth();
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    email: "",
+    fullname: "",
+    phone: "",
+    address: "",
+  });
+  const { user, logout, isAdmin, isShipper, updateUserProfile } = useAuth();
 
   const { cartCount } = useCart();
   const navigate = useNavigate();
@@ -25,6 +34,82 @@ export function Header() {
     logout();
     setUserMenuOpen(false);
     navigate("/");
+  };
+
+  const handleEditProfile = () => {
+    if (user) {
+      setProfileForm({
+        email: user.email || "",
+        fullname: user.fullname || "",
+        phone: user.phone || "",
+        address: user.address || "",
+      });
+      setEditingProfile(true);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (editingProfile && user && updateUserProfile) {
+      try {
+        // Try to update via backend
+        const accessToken = localStorage.getItem("access_token");
+        if (accessToken) {
+          const res = await fetch("http://localhost:8000/api/auth/profile", {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: profileForm.email,
+              fullname: profileForm.fullname,
+              phone: profileForm.phone,
+              address: profileForm.address,
+            }),
+          });
+
+          if (!res.ok) {
+            const error = await res.json();
+            throw new Error(error.detail || "Lỗi khi cập nhật thông tin");
+          }
+        }
+
+        // Update local context
+        updateUserProfile({
+          email: profileForm.email,
+          fullname: profileForm.fullname,
+          phone: profileForm.phone,
+          address: profileForm.address,
+        });
+
+        // Update localStorage currentUser if it exists
+        const savedUser = JSON.parse(
+          localStorage.getItem("currentUser") || "{}",
+        );
+        if (Object.keys(savedUser).length > 0) {
+          localStorage.setItem(
+            "currentUser",
+            JSON.stringify({
+              ...savedUser,
+              email: profileForm.email,
+              fullname: profileForm.fullname,
+              phone: profileForm.phone,
+              address: profileForm.address,
+            }),
+          );
+        }
+
+        setEditingProfile(false);
+        toast.success("Cập nhật thông tin tài khoản thành công");
+      } catch (err) {
+        console.error("Error updating profile:", err);
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Có lỗi xảy ra khi cập nhật thông tin",
+        );
+      }
+    }
   };
 
   return (
@@ -122,6 +207,16 @@ export function Header() {
                       </p>
                       <p className="text-sm text-gray-500">{user.email}</p>
                     </div>
+                    <button
+                      onClick={() => {
+                        handleEditProfile();
+                        setUserMenuOpen(false);
+                      }}
+                      className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 transition-colors duration-200 w-full text-left"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Chỉnh Sửa Tài Khoản</span>
+                    </button>
                     <Link
                       to="/orders"
                       className="flex items-center space-x-2 px-4 py-2 hover:bg-gray-100 transition-colors duration-200"
@@ -227,6 +322,85 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {/* Edit Profile Modal */}
+      {editingProfile && user && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-2xl font-bold mb-6">Chỉnh Sửa Tài Khoản</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Email
+                </label>
+                <input
+                  value={profileForm.email}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, email: e.target.value })
+                  }
+                  placeholder="Nhập email"
+                  type="email"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Tên Đầy Đủ
+                </label>
+                <input
+                  value={profileForm.fullname}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, fullname: e.target.value })
+                  }
+                  placeholder="Nhập tên đầy đủ"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Số Điện Thoại
+                </label>
+                <input
+                  value={profileForm.phone}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, phone: e.target.value })
+                  }
+                  placeholder="Nhập số điện thoại"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Địa Chỉ
+                </label>
+                <textarea
+                  value={profileForm.address}
+                  onChange={(e) =>
+                    setProfileForm({ ...profileForm, address: e.target.value })
+                  }
+                  placeholder="Nhập địa chỉ"
+                  rows={3}
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+            </div>
+            <div className="flex space-x-4 mt-6">
+              <button
+                onClick={() => setEditingProfile(false)}
+                className="flex-1 border-2 border-gray-300 py-2 rounded-lg hover:bg-gray-50"
+              >
+                Hủy Bỏ
+              </button>
+              <button
+                onClick={handleSaveProfile}
+                className="flex-1 bg-gradient-to-r from-[#0A3D62] to-[#1E90FF] text-white py-2 rounded-lg hover:shadow-lg"
+              >
+                Lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -207,7 +207,7 @@ export function Products({
                   {product.name}
                 </h3>
 
-                <div className="flex items-center mb-3">
+                {/* <div className="flex items-center mb-3">
                   <div className="flex items-center">
                     <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                     <span className="ml-1 text-sm font-semibold text-gray-700">
@@ -217,7 +217,7 @@ export function Products({
                   <span className="text-sm text-gray-500 ml-2">
                     ({product.reviews} đánh giá)
                   </span>
-                </div>
+                </div> */}
 
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-[#0A3D62]">

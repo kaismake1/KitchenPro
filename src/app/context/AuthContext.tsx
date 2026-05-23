@@ -12,6 +12,9 @@ interface User {
   username: string;
   email: string;
   role: "user" | "admin" | "shipper";
+  fullname?: string;
+  phone?: string;
+  address?: string;
 }
 
 interface AuthContextType {
@@ -33,6 +36,12 @@ interface AuthContextType {
   isShipper: boolean;
   isLoading: boolean;
   accessToken: string | null;
+  updateUserProfile?: (data: {
+    email?: string;
+    fullname?: string;
+    phone?: string;
+    address?: string;
+  }) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -155,6 +164,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateUserProfile = (data: {
+    email?: string;
+    fullname?: string;
+    phone?: string;
+    address?: string;
+  }) => {
+    if (user) {
+      setUser({
+        ...user,
+        email: data.email || user.email,
+        fullname: data.fullname || user.fullname,
+        phone: data.phone || user.phone,
+        address: data.address || user.address,
+      });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -162,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         logout,
+        updateUserProfile,
         isAdmin: user?.role === "admin",
         isShipper: user?.role === "shipper",
         isLoading,

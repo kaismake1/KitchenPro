@@ -144,7 +144,7 @@ export function ProductDetailPage() {
                 {product.name}
               </h1>
 
-              <div className="flex items-center mb-4">
+              {/* <div className="flex items-center mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
                     <Star
@@ -160,7 +160,7 @@ export function ProductDetailPage() {
                 <span className="ml-2 text-gray-600">
                   {product.rating} ({product.reviews} đánh giá)
                 </span>
-              </div>
+              </div> */}
 
               <div className="mb-6">
                 <span className="text-4xl font-bold text-[#0A3D62]">

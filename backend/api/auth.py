@@ -24,6 +24,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class ProfileUpdateRequest(BaseModel):
+    email: EmailStr = None
+    fullname: str = None
+    phone: str = None
+    address: str = None
+
+
 class AuthResponse(BaseModel):
     id: str
     username: str
@@ -115,4 +122,62 @@ def get_current_user(authorization: str = Header(None), db: Session = Depends(ge
         "username": user.username,
         "email": user.email,
         "role": user.role,
+        "fullname": user.fullname,
+        "phone": user.phone,
+        "address": user.address,
     }
+
+
+@router.put("/profile")
+def update_profile(req: ProfileUpdateRequest, authorization: str = Header(None), db: Session = Depends(get_db)):
+    """Update current user's profile (fullname, phone, address)."""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Authorization header missing")
+    
+    # Parse "Bearer {token}" format
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid authorization scheme")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header format")
+    
+    # Verify token
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    user_id = payload.get("sub")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    # Update profile fields
+    if req.email is not None:
+        # Check if email is already used by another user
+        existing_email = db.query(User).filter(
+            (User.email == req.email) & (User.id != user.id)
+        ).first()
+        if existing_email:
+            raise HTTPException(status_code=400, detail="Email already in use")
+        user.email = req.email
+    if req.fullname is not None:
+        user.fullname = req.fullname
+    if req.phone is not None:
+        user.phone = req.phone
+    if req.address is not None:
+        user.address = req.address
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "role": user.role,
+        "fullname": user.fullname,
+        "phone": user.phone,
+        "address": user.address,
+    }
+
