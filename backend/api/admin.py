@@ -414,6 +414,7 @@ def get_all_users(
             "username": user.username,
             "email": user.email,
             "role": user.role,
+            "fullname": user.fullname,
             "phone": user.phone,
             "address": user.address,
             "status": "active",
@@ -427,6 +428,7 @@ class UserCreateRequest(BaseModel):
     email: str
     password: str
     role: str = "user"
+    fullname: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
 
@@ -454,6 +456,7 @@ def create_user(
         email=req.email,
         hashed_password=hashed_pw,
         role=req.role,
+        fullname=req.fullname,
         phone=req.phone,
         address=req.address
     )
@@ -466,6 +469,7 @@ def create_user(
         "username": new_user.username,
         "email": new_user.email,
         "role": new_user.role,
+        "fullname": new_user.fullname,
         "phone": new_user.phone,
         "address": new_user.address,
         "status": "active"
@@ -476,6 +480,7 @@ class UserUpdateRequest(BaseModel):
     username: Optional[str] = None
     email: Optional[str] = None
     role: Optional[str] = None
+    fullname: Optional[str] = None
     phone: Optional[str] = None
     address: Optional[str] = None
 
@@ -501,6 +506,8 @@ def update_user(
         user.email = req.email
     if req.role is not None:
         user.role = req.role
+    if req.fullname is not None:
+        user.fullname = req.fullname
     if req.phone is not None:
         user.phone = req.phone
     if req.address is not None:
@@ -514,7 +521,34 @@ def update_user(
         "username": user.username,
         "email": user.email,
         "role": user.role,
+        "fullname": user.fullname,
         "phone": user.phone,
         "address": user.address,
         "status": "active"
+    }
+
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: str,
+    authorization: str = Header(None),
+    db: Session = Depends(get_db)
+):
+    """Delete user - for admin dashboard."""
+    admin = verify_admin(authorization, db)
+
+    # Prevent deleting the admin user
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot delete admin user")
+
+    db.delete(user)
+    db.commit()
+
+    return {
+        "id": user_id,
+        "message": "User deleted successfully"
     }

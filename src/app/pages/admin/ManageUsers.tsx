@@ -12,6 +12,7 @@ export function ManageUsers() {
     email: "",
     password: "",
     role: "user",
+    fullname: "",
     phone: "",
     address: "",
   });
@@ -59,11 +60,37 @@ export function ManageUsers() {
     }
 
     if (confirm("Bạn có chắc chắn muốn xóa người dùng này?")) {
-      const filtered = users.filter((u) => u.id !== userId);
-      const nonAdmin = filtered.filter((u) => u.id !== "admin-1");
-      localStorage.setItem("users", JSON.stringify(nonAdmin));
-      setUsers(filtered);
-      toast.success("Người dùng đã xóa thành công");
+      // Try to delete via backend first
+      if (accessToken && isAdmin) {
+        fetch(`http://localhost:8000/api/admin/users/${userId}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+          .then((res) => {
+            if (res.ok) {
+              const filtered = users.filter((u) => u.id !== userId);
+              setUsers(filtered);
+              const nonAdmin = filtered.filter((u) => u.id !== "admin-1");
+              localStorage.setItem("users", JSON.stringify(nonAdmin));
+              toast.success("Người dùng đã xóa thành công");
+            } else {
+              toast.error("Không thể xóa người dùng");
+            }
+          })
+          .catch((err) => {
+            console.error("Error deleting user:", err);
+            toast.error("Có lỗi xảy ra khi xóa người dùng");
+          });
+      } else {
+        // Fallback: delete from localStorage only
+        const filtered = users.filter((u) => u.id !== userId);
+        const nonAdmin = filtered.filter((u) => u.id !== "admin-1");
+        localStorage.setItem("users", JSON.stringify(nonAdmin));
+        setUsers(filtered);
+        toast.success("Người dùng đã xóa thành công");
+      }
     }
   };
 
@@ -92,6 +119,7 @@ export function ManageUsers() {
             username: editingUser.username,
             email: editingUser.email,
             role: editingUser.role,
+            fullname: editingUser.fullname,
             phone: editingUser.phone,
             address: editingUser.address,
           }),
@@ -130,6 +158,9 @@ export function ManageUsers() {
             email: "",
             password: "",
             role: "user",
+            fullname: "",
+            phone: "",
+            address: "",
           });
           setShowAddModal(false);
           return;
@@ -149,13 +180,24 @@ export function ManageUsers() {
       username: newUserForm.username,
       email: newUserForm.email,
       role: newUserForm.role,
+      fullname: newUserForm.fullname,
+      phone: newUserForm.phone,
+      address: newUserForm.address,
       status: "active",
     };
     setUsers([...users, newUser]);
     const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
     localStorage.setItem("users", JSON.stringify([...allUsers, newUser]));
     toast.success("Người dùng đã được thêm thành công");
-    setNewUserForm({ username: "", email: "", password: "", role: "user" });
+    setNewUserForm({
+      username: "",
+      email: "",
+      password: "",
+      role: "user",
+      fullname: "",
+      phone: "",
+      address: "",
+    });
     setShowAddModal(false);
   };
   return (
@@ -179,6 +221,9 @@ export function ManageUsers() {
                 Tên Đăng Nhập
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                Tên Đầy Đủ
+              </th>
+              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
                 Email
               </th>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
@@ -196,6 +241,7 @@ export function ManageUsers() {
             {users.map((user) => (
               <tr key={user.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4">{user.username}</td>
+                <td className="px-6 py-4">{user.fullname || "—"}</td>
                 <td className="px-6 py-4">{user.email}</td>
                 <td className="px-6 py-4">
                   <span
@@ -261,6 +307,19 @@ export function ManageUsers() {
                   onChange={(e) =>
                     setEditingUser({ ...editingUser, username: e.target.value })
                   }
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Tên Đầy Đủ
+                </label>
+                <input
+                  value={editingUser.fullname || ""}
+                  onChange={(e) =>
+                    setEditingUser({ ...editingUser, fullname: e.target.value })
+                  }
+                  placeholder="Nhập tên đầy đủ"
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
                 />
               </div>
@@ -360,6 +419,19 @@ export function ManageUsers() {
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-2">
+                  Tên Đầy Đủ
+                </label>
+                <input
+                  value={newUserForm.fullname}
+                  onChange={(e) =>
+                    setNewUserForm({ ...newUserForm, fullname: e.target.value })
+                  }
+                  placeholder="Nhập tên đầy đủ"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1E90FF]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-2">
                   Email
                 </label>
                 <input
@@ -440,6 +512,7 @@ export function ManageUsers() {
                     email: "",
                     password: "",
                     role: "user",
+                    fullname: "",
                     phone: "",
                     address: "",
                   });
